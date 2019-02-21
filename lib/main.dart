@@ -38,44 +38,81 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   Counter get _counter => Provide.value<Counter>(context);
 
+  PageCounter pageCounter = PageCounter(0);
+  PageCounter pageCounter2 = PageCounter(0);
+  var scope1 = ProviderScope("1");
+  var scope2 = ProviderScope("2");
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Provide<Counter>(
-              builder: (BuildContext context, Widget child, Counter counter) {
-                return Text(
-                  '${counter.value}',
-                  style: Theme.of(context).textTheme.display1,
-                );
-              },
-            ),
-            StreamBuilder<Counter>(
-              initialData: _counter,
-              stream: Provide.stream<Counter>(context),
-              builder: (BuildContext context, AsyncSnapshot<Counter> snapshot) {
-                return Text(
-                  '${snapshot.data.value}',
-                  style: Theme.of(context).textTheme.display1,
-                );
-              },
-            ),
-          ],
+    return ProviderNode(
+      providers: Providers()
+        ..provide(Provider.value(pageCounter), scope: scope1)
+        ..provide(Provider.value(pageCounter2), scope: scope2),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.title),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _counter.inc(),
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                'You have pushed the button this many times:',
+              ),
+              Provide<PageCounter>(
+                scope: scope1,
+                builder:
+                    (BuildContext context, Widget child, PageCounter counter) {
+                  return Text(
+                    '${counter.value}',
+                    style: Theme.of(context).textTheme.display1,
+                  );
+                },
+              ),
+              Provide<PageCounter>(
+                scope: scope2,
+                builder:
+                    (BuildContext context, Widget child, PageCounter counter) {
+                  return Text(
+                    '${counter.value}',
+                    style: Theme.of(context).textTheme.display1,
+                  );
+                },
+              ),
+              StreamBuilder<Counter>(
+                initialData: _counter,
+                stream: Provide.stream<Counter>(context),
+                builder:
+                    (BuildContext context, AsyncSnapshot<Counter> snapshot) {
+                  return Text(
+                    '${snapshot.data.value}',
+                    style: Theme.of(context).textTheme.display1,
+                  );
+                },
+              ),
+              FlatButton(
+                child: Text("nextPage"),
+                onPressed: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (BuildContext context) {
+                    return MyHomePage(
+                      title: "new page",
+                    );
+                  }));
+                },
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            _counter.inc();
+            pageCounter.inc();
+            pageCounter2.rec();
+          },
+          tooltip: 'Increment',
+          child: Icon(Icons.add),
+        ),
       ),
     );
   }
@@ -90,6 +127,24 @@ class Counter with ChangeNotifier {
 
   void inc() {
     _value++;
+    notifyListeners();
+  }
+}
+
+class PageCounter with ChangeNotifier {
+  int _value;
+
+  int get value => _value;
+
+  PageCounter(this._value);
+
+  void inc() {
+    _value++;
+    notifyListeners();
+  }
+
+  void rec() {
+    _value--;
     notifyListeners();
   }
 }
